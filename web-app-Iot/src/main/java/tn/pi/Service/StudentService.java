@@ -2,14 +2,13 @@ package tn.pi.Service;
 
 
 import com.google.api.core.ApiFuture;
-import com.google.cloud.firestore.DocumentReference;
-import com.google.cloud.firestore.DocumentSnapshot;
-import com.google.cloud.firestore.Firestore;
-import com.google.cloud.firestore.WriteResult;
+import com.google.cloud.firestore.*;
 import com.google.firebase.cloud.FirestoreClient;
 import org.springframework.stereotype.Service;
 import tn.pi.entities.Student;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.ExecutionException;
 
 @Service
@@ -40,6 +39,27 @@ public class StudentService {
             // Handle the case where the document does not exist
             throw new IllegalArgumentException("Student with ID " + numInsc + " not found.");
         }
+    }
+    public List<Student> getAllStudents() throws ExecutionException, InterruptedException {
+        Firestore dbFirestore = FirestoreClient.getFirestore();
+
+        // Reference to the Firestore collection
+        CollectionReference studentsCollection = dbFirestore.collection(COLLECTION_NAME);
+
+        // Get all documents in the collection
+        ApiFuture<QuerySnapshot> future = studentsCollection.get();
+
+        // Get the query snapshot and extract the documents
+        QuerySnapshot querySnapshot = future.get();
+
+        List<Student> students = new ArrayList<>();
+        for (DocumentSnapshot document : querySnapshot.getDocuments()) {
+            // Convert each document to a Student object and add to the list
+            Student student = document.toObject(Student.class);
+            students.add(student);
+        }
+
+        return students;
     }
     public String deleteStudent(Long numInsc) throws ExecutionException, InterruptedException {
         Firestore dbFirestore = FirestoreClient.getFirestore();

@@ -7,6 +7,7 @@ import org.springframework.web.bind.annotation.*;
 import tn.pi.Service.StudentService;
 import tn.pi.entities.Student;
 
+import java.util.List;
 import java.util.concurrent.ExecutionException;
 
 @RestController
@@ -18,6 +19,12 @@ public class StudentController {
     @PostMapping("/Students")
     public String saveStudent(@RequestBody Student student) throws ExecutionException, InterruptedException {
         return studentService.saveStudent(student);
+    }
+    @GetMapping("/getStudents")
+    @CrossOrigin(origins = "http://localhost:3000") // Allow requests from frontend
+
+    public List<Student> getAllStudents() throws ExecutionException, InterruptedException {
+        return studentService.getAllStudents();
     }
     @GetMapping("/Students/{NumsInsc}")
     public Student getStudent(@PathVariable("NumsInsc") Long NumInsc) throws ExecutionException, InterruptedException {
