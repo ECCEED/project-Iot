@@ -21,7 +21,7 @@ ReactDOM.render(
       <Route path="/auth" component={Auth} />
       {/* add routes without layouts */}
       {/* add redirect for first page */}
-      <Redirect from="*" to="/" />
+      <Redirect from="*" to="/admin/dashboard" />
     </Switch>
   </BrowserRouter>,
   document.getElementById("root")
