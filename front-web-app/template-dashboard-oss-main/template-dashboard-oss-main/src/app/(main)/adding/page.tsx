@@ -171,7 +171,6 @@ export default function AddStudent() {
                     </span>
                     <div>
                       <p className="text-sm font-medium text-gray-900 dark:text-gray-50">{workspace.name}</p>
-                      <p className="text-xs text-gray-700 dark:text-gray-400">{workspace.role}</p>
                     </div>
                   </div>
                 </DropdownMenuItem>

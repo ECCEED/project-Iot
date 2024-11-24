@@ -1,157 +1,264 @@
-
 'use client'
 
-import React, { useState } from 'react';
-import { CSmartTable, CAvatar, CBadge, CButton, CCollapse, CCardBody } from '@coreui/react-pro';
+import { useEffect, useState } from "react"
 
+type AttendanceRecord = {
+  studentId: string
+  studentName: string
+  className: string // The class to which the student belongs (IRM1, IRM2, etc.)
+  attendance: Record<string, 'Present' | 'Absent'>
+}
 
-// Example Date Range Calculation
+type FilterOptions = {
+  class: string
+  month: string
+}
 
+export default function AttendanceRegister() {
+  const [attendanceData, setAttendanceData] = useState<AttendanceRecord[]>([])
+  const [dates, setDates] = useState<string[]>([]) 
+  const [loading, setLoading] = useState<boolean>(false)
+  const [error, setError] = useState<string | null>(null)
 
-export default function ArchivePage() {
-  
-  const [details, setDetails] = useState<number[]>([]);
+  // Filter and selected state
+  const [filter, setFilter] = useState<FilterOptions>({ class: 'IRM1', month: '2024-04' })
+  const [filteredData, setFilteredData] = useState<AttendanceRecord[]>([])
 
-  // Sample columns definition for the table
-  const columns = [
-    { key: 'avatar', label: '', filter: false, sorter: false },
-    { key: 'name', _style: { width: '20%' } },
-    {
-      key: 'registered',
-      sorter: (date1: { registered: string }, date2: { registered: string }) => {
-        const a = new Date(date1.registered);
-        const b = new Date(date2.registered);
-        return a > b ? 1 : b > a ? -1 : 0;
-      },
-    },
-    { key: 'role', _style: { width: '20%' } },
-    'status',
-    { key: 'show_details', label: '', _style: { width: '1%' }, filter: false, sorter: false },
-  ];
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1)
+  const datesPerPage = 5
 
-  // Sample items data
-  const items = [
-    { id: 1, name: 'Samppa Nori', avatar: '1.jpg', registered: '2021/03/01', role: 'Member', status: 'Active' },
-    { id: 2, name: 'Estavan Lykos', avatar: '2.jpg', registered: '2018/02/07', role: 'Staff', status: 'Banned' },
-    { id: 3, name: 'Chetan Mohamed', avatar: '3.jpg', registered: '2020/01/15', role: 'Admin', status: 'Inactive' },
-    { id: 4, name: 'Derick Maximinus', avatar: '4.jpg', registered: '2019/04/05', role: 'Member', status: 'Pending' },
-    { id: 5, name: 'Friderik Dávid', avatar: '5.jpg', registered: '2022/03/25', role: 'Staff', status: 'Active' },
-    { id: 6, name: 'Yiorgos Avraamu', avatar: '6.jpg', registered: '2017/01/01', role: 'Member', status: 'Active' },
-  ];
+  // Handle class and month change
+  const handleClassChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+    const selectedClass = event.target.value
+    setFilter(prevFilter => ({ ...prevFilter, class: selectedClass }))
+  }
 
-  // Function to get badge color based on status
-  const getBadge = (status: string) => {
-    switch (status) {
-      case 'Active':
-        return 'success';
-      case 'Inactive':
-        return 'secondary';
-      case 'Pending':
-        return 'warning';
-      case 'Banned':
-        return 'danger';
-      default:
-        return 'primary';
-    }
-  };
+  const handleMonthChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+    const selectedMonth = event.target.value
+    setFilter(prevFilter => ({ ...prevFilter, month: selectedMonth }))
+  }
 
-  // Function to toggle details visibility
-  const toggleDetails = (id: number) => {
-    const position = details.indexOf(id);
-    const newDetails = [...details];
-    if (position !== -1) {
-      newDetails.splice(position, 1);
-    } else {
-      newDetails.push(id);
-    }
-    setDetails(newDetails);
-  };
+  // Calculate the indexes of dates to show on the current page
+  const indexOfLastDate = currentPage * datesPerPage
+  const indexOfFirstDate = indexOfLastDate - datesPerPage
+  const currentDates = dates.slice(indexOfFirstDate, indexOfLastDate)
+
+  // Handle page change
+  const handlePageChange = (pageNumber: number) => {
+    setCurrentPage(pageNumber)
+  }
+
+  // Mock data (to test locally without an API)
+  useEffect(() => {
+    const mockData = {
+      "records": [
+        {
+          "studentId": "S001",
+          "studentName": "John Doe",
+          "className": "IRM1", // Add className property
+          "attendance": {
+            "2024-04-01": "Present",
+            "2024-04-02": "Absent",
+            "2024-04-03": "Present",
+            "2024-04-04": "Absent",
+            "2024-04-05": "Present",
+            "2024-04-06": "Present",
+            "2024-04-07": "Absent",
+            "2024-04-08": "Present",
+            "2024-04-09": "Absent",
+            "2024-04-10": "Present",
+            "2024-04-11": "Absent",
+            "2024-04-12": "Present",
+            "2024-04-13": "Present",
+            "2024-04-14": "Absent",
+            "2024-04-15": "Present",
+            "2024-05-01": "Absent",
+            "2024-05-02": "Present",
+            "2024-05-03": "Present",
+            "2024-05-04": "Absent",
+            "2024-05-05": "Present",
+            "2024-05-06": "Present",
+            "2024-05-07": "Absent",
+            "2024-05-08": "Present",
+            "2024-05-09": "Absent",
+            "2024-05-10": "Present",
+            "2024-05-11": "Present",
+            "2024-05-12": "Absent",
+            "2024-05-13": "Present",
+            "2024-06-01": "Present",
+            "2024-06-02": "Absent",
+            "2024-06-03": "Present",
+            "2024-06-04": "Absent",
+            "2024-06-05": "Present"
+          }
+        },
+        {
+          "studentId": "S002",
+          "studentName": "Jane Smith",
+          "className": "IRM1", // Add className property
+          "attendance": {
+            "2024-04-01": "Absent",
+            "2024-04-02": "Present",
+            "2024-04-03": "Absent",
+            "2024-04-04": "Present",
+            "2024-04-05": "Absent",
+            "2024-04-06": "Present",
+            "2024-04-07": "Absent",
+            "2024-04-08": "Present",
+            "2024-04-09": "Present",
+            "2024-04-10": "Absent",
+            "2024-04-11": "Present",
+            "2024-04-12": "Absent",
+            "2024-04-13": "Present",
+            "2024-04-14": "Absent",
+            "2024-04-15": "Present",
+            "2024-05-01": "Present",
+            "2024-05-02": "Absent",
+            "2024-05-03": "Present",
+            "2024-05-04": "Present",
+            "2024-05-05": "Absent",
+            "2024-05-06": "Present",
+            "2024-05-07": "Absent",
+            "2024-05-08": "Present",
+            "2024-05-09": "Present",
+            "2024-05-10": "Absent",
+            "2024-05-11": "Present",
+            "2024-05-12": "Present",
+            "2024-05-13": "Absent",
+            "2024-06-01": "Absent",
+            "2024-06-02": "Present",
+            "2024-06-03": "Absent",
+            "2024-06-04": "Present",
+            "2024-06-05": "Absent"
+          }
+        }
+      ],
+      "dates": [
+        "2024-04-01", "2024-04-02", "2024-04-03", "2024-04-04", "2024-04-05", "2024-04-06", "2024-04-07", "2024-04-08", "2024-04-09", "2024-04-10",
+        "2024-04-11", "2024-04-12", "2024-04-13", "2024-04-14", "2024-04-15", "2024-05-01", "2024-05-02", "2024-05-03", "2024-05-04", "2024-05-05",
+        "2024-05-06", "2024-05-07", "2024-05-08", "2024-05-09", "2024-05-10", "2024-05-11", "2024-05-12", "2024-05-13", "2024-06-01", "2024-06-02",
+        "2024-06-03", "2024-06-04", "2024-06-05"
+      ]
+    };
+
+    setAttendanceData(mockData.records);
+    setDates(mockData.dates);
+    setLoading(false);
+  }, []);
+
+  // Filter records by class and month
+  useEffect(() => {
+    // Filter by class first
+    const filteredRecords = attendanceData.filter(record => record.className === filter.class);
+
+    // Filter dates that start with the selected month (e.g., '2024-04')
+    const filteredDates = dates.filter(date => date.startsWith(filter.month));
+
+    // Filter attendance data by the selected dates
+    const filteredData = filteredRecords.map(record => {
+      const filteredAttendance: Record<string, 'Present' | 'Absent'> = {};
+      filteredDates.forEach(date => {
+        filteredAttendance[date] = record.attendance[date] || 'N/A';
+      });
+      return { ...record, attendance: filteredAttendance };
+    });
+
+    setFilteredData(filteredData);
+    setDates(filteredDates); // Update the displayed dates
+    setCurrentPage(1); // Reset to the first page when the filter changes
+  }, [filter, attendanceData]);
+
+  // Calculate the number of pages
+  const totalPages = Math.ceil(filteredData.length / datesPerPage);
 
   return (
-    <>
-      <section aria-labelledby="table-archive">
-        <h1
-          id="table-archive"
-          className="scroll-mt-10 text-lg font-semibold text-gray-900 sm:text-xl dark:text-gray-50"
-        >
-          Archive Table
-        </h1>
-     
-        <div className="mt-10">
-          {/* Table */}
-          <CSmartTable
-            activePage={1}
-            cleaner
-            clickableRows
-            columns={columns}
-            columnFilter
-            columnSorter
-    
-            items={items}
-            itemsPerPageSelect
-            itemsPerPage={5}
-            pagination
-            scopedColumns={{
-              avatar: (item) => (
-                <td>
-                  <CAvatar src={`./../../images/avatars/${item.avatar}`} />
-                </td>
-              ),
-              registered: (item) => {
-                const date = new Date(item.registered);
-                const options: Intl.DateTimeFormatOptions = { year: 'numeric', month: 'long', day: 'numeric' };
-                return <td>{date.toLocaleDateString('en-US', options)}</td>;
-              },
-              status: (item) => (
-                <td>
-                  <CBadge color={getBadge(item.status)}>{item.status}</CBadge>
-                </td>
-              ),
-              show_details: (item) => (
-                <td className="py-2">
-                  <CButton
-                    color="primary"
-                    variant="outline"
-                    shape="square"
-                    size="sm"
-                    onClick={() => toggleDetails(item.id)}
-                  >
-                    {details.includes(item.id) ? 'Hide' : 'Show'}
-                  </CButton>
-                </td>
-              ),
-              details: (item) => (
-                <CCollapse visible={details.includes(item.id)}>
-                  <CCardBody className="p-3">
-                    <h4>{item.name}</h4>
-                    <p className="text-body-secondary">User since: {item.registered}</p>
-                    <CButton size="sm" color="info">
-                      User Settings
-                    </CButton>
-                    <CButton size="sm" color="danger" className="ms-1">
-                      Delete
-                    </CButton>
-                  </CCardBody>
-                </CCollapse>
-              ),
-            }}
-            selectable
-            sorterValue={{ column: 'status', state: 'asc' }}
-            tableFilter
-            tableProps={{
-              className: 'add-this-class',
-              responsive: true,
-              striped: true,
-              hover: true,
-            }}
-            tableBodyProps={{
-              className: 'align-middle',
-            }}
-          
-          />
+    <div className="p-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 mt-4">
+        <div>
+          <label htmlFor="class" className="block text-sm font-medium text-gray-700">Class</label>
+          <select
+            id="class"
+            name="class"
+            value={filter.class}
+            onChange={handleClassChange}
+            className="mt-1 block w-full p-2 bg-white border rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+          >
+            <option value="IRM1">IRM1</option>
+            <option value="IRM2">IRM2</option>
+            <option value="IRM3">IRM3</option>
+          </select>
         </div>
-      </section>
-    </>
-  );
 
+        <div>
+          <label htmlFor="month" className="block text-sm font-medium text-gray-700">Month</label>
+          <select
+            id="month"
+            name="month"
+            value={filter.month}
+            onChange={handleMonthChange}
+            className="mt-1 block w-full p-2 bg-white border rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+          >
+            <option value="2024-04">April 2024</option>
+            <option value="2024-05">May 2024</option>
+            <option value="2024-06">June 2024</option>
+          </select>
+        </div>
+      </div>
+
+      {loading ? (
+        <p>Loading...</p>
+      ) : error ? (
+        <p className="text-red-500">{error}</p>
+      ) : (
+        <>
+          {filteredData.length === 0 ? (
+            <p>No attendance records found for this month and class.</p>
+          ) : (
+            <div>
+              <table className="min-w-full table-auto">
+                <thead>
+                  <tr>
+                    <th className="py-2 px-4 text-left">Student Name</th>
+                    {dates.map((date, index) => (
+                      <th key={index} className="py-2 px-4 text-left">{date}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredData.map((record, index) => (
+                    <tr key={index}>
+                      <td className="py-2 px-4">{record.studentName}</td>
+                      {dates.map((date, dateIndex) => (
+                        <td key={dateIndex} className="py-2 px-4">
+                          {record.attendance[date] || 'N/A'}
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              <div className="flex justify-center mt-4">
+                <button
+                  onClick={() => handlePageChange(currentPage - 1)}
+                  disabled={currentPage === 1}
+                  className="px-4 py-2 bg-blue-500 text-white rounded-md"
+                >
+                  Previous
+                </button>
+                <span className="mx-4">Page {currentPage} of {totalPages}</span>
+                <button
+                  onClick={() => handlePageChange(currentPage + 1)}
+                  disabled={currentPage === totalPages}
+                  className="px-4 py-2 bg-blue-500 text-white rounded-md"
+                >
+                  Next
+                </button>
+              </div>
+            </div>
+          )}
+        </>
+      )}
+    </div>
+  )
 }
