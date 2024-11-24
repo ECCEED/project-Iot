@@ -27,6 +27,9 @@ const navigation = [
   {
     name:"ADD Students", href: siteConfig.baseLinks.adding, icon:RiListCheck
   },
+  {
+    name :"archive", href: siteConfig.baseLinks.archive, icon:RiListCheck
+  }
 ] as const
 
 const shortcuts = [
