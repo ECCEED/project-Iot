@@ -28,8 +28,10 @@ const navigation = [
     name:"ADD Students", href: siteConfig.baseLinks.adding, icon:RiListCheck
   },
   {
-    name :"archive", href: siteConfig.baseLinks.archive, icon:RiListCheck
-  }
+
+    name:"archive",href: siteConfig.baseLinks.archive,icon: RiHome2Line
+  },
+
 ] as const
 
 const shortcuts = [
