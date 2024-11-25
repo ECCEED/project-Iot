@@ -16,11 +16,8 @@ import org.checkerframework.common.reflection.qual.GetConstructor;
 
 public class Class {
     @Id
-
     private Long ID;
     private String Name;
-   
-    private String mail;
 
 
 }

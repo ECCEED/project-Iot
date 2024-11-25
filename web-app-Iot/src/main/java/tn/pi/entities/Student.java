@@ -1,9 +1,6 @@
 package tn.pi.entities;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
+import jakarta.persistence.*;
 import lombok.*;
 import org.checkerframework.common.reflection.qual.GetConstructor;
 
@@ -22,5 +19,8 @@ public class Student {
     private int age;
     private String mail;
 
+    @ManyToOne
+    @JoinColumn(name = "class_id")
+    private Class classEntity;
 
 }
