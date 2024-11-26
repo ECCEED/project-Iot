@@ -1,48 +1,109 @@
-'use client' // Mark this component as a Client Component
+'use client'
 
 import { useEffect, useState } from "react"
+
+type ClassEntity = {
+  id: string
+  name: string
+}
 
 type Student = {
   numInsc: string
   name: string
   mail: string
   age: number
+  classEntity: ClassEntity
 }
 
 export default function Example() {
   const [students, setStudents] = useState<Student[]>([])
+  const [filteredStudents, setFilteredStudents] = useState<Student[]>([]) // To hold filtered students
   const [loading, setLoading] = useState<boolean>(true)
   const [error, setError] = useState<string | null>(null) // Error state to handle fetch errors
+  const [selectedClass, setSelectedClass] = useState<string>('') // Selected class filter state
+  const [classes, setClasses] = useState<ClassEntity[]>([]) // State to hold available classes
 
-  // Fetch students when the component mounts
+  // Fetch students and classes when the component mounts
   useEffect(() => {
-    async function fetchStudents() {
+    async function fetchData() {
       try {
-        const response = await fetch("http://localhost:8090/api/getStudents") // API endpoint for getting students
-        if (!response.ok) {
-          throw new Error("Failed to fetch students")
+        // Fetch students
+        const studentResponse = await fetch("http://localhost:8090/api/Students", {
+          method: 'GET',
+        });
+        if (!studentResponse.ok) {
+          throw new Error("Failed to fetch students");
         }
-        const data = await response.json()
-        setStudents(data)
-      } catch (error: any) {
-        console.error("Error fetching students:", error)
-        setError("There was an error loading student data.")
+        const studentData = await studentResponse.json();
+        setStudents(studentData);
+        setFilteredStudents(studentData); // Initially show all students
+
+        // Fetch classes
+        const classResponse = await fetch("http://localhost:8090/api/classes", {
+          method: 'GET',
+        });
+        if (!classResponse.ok) {
+          throw new Error("Failed to fetch classes");
+        }
+        const classData = await classResponse.json();
+        setClasses(classData); // Store fetched classes
+      } catch (err: any) {
+        console.error("Error fetching data:", err);
+        setError("Failed to load data.");
       } finally {
-        setLoading(false)
+        setLoading(false); // Set loading to false once data is fetched
       }
     }
-    fetchStudents()
-  }, [])
+
+    fetchData();
+  }, []);
+
+  // Handle filtering students by class
+  const handleClassFilterChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+    const selectedClass = event.target.value;
+    setSelectedClass(selectedClass);
+
+    if (selectedClass === '') {
+      setFilteredStudents(students); // If no class selected, show all students
+    } else {
+      const filtered = students.filter(student => student.classEntity.name === selectedClass);
+      setFilteredStudents(filtered);
+    }
+  };
 
   return (
     <>
       <h1 className="text-lg font-semibold text-gray-900 sm:text-xl dark:text-gray-50">
         Student List
       </h1>
-      <div className="mt-4 sm:mt-6 lg:mt-10">
 
+      {/* Class filter dropdown */}
+      <div className="mt-4 sm:mt-6 lg:mt-10">
+        <label
+          htmlFor="classFilter"
+          className="block text-sm font-medium text-gray-700 dark:text-gray-300"
+        >
+          Filter by Class
+        </label>
+        <select
+          id="classFilter"
+          value={selectedClass}
+          onChange={handleClassFilterChange}
+          className="mt-2 block w-40 rounded-md border border-gray-300 p-2 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+        >
+          <option value="">All Classes</option>
+          {/* Dynamically generate class options */}
+          {classes.map((classEntity) => (
+            <option key={classEntity.id} value={classEntity.name}>
+              {classEntity.name}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      <div className="mt-4 sm:mt-6 lg:mt-10">
         {/* Table for displaying students */}
-        <div className="overflow-x-auto mt-10">
+        <div className="mt-10 overflow-x-auto">
           {loading ? (
             <div className="text-center text-gray-500">Loading students...</div>
           ) : error ? (
@@ -51,26 +112,31 @@ export default function Example() {
             <table className="min-w-full table-auto border-collapse">
               <thead>
                 <tr className="border-b">
-                  <th className="py-2 px-4 text-left">ID</th>
-                  <th className="py-2 px-4 text-left">Name</th>
-                  <th className="py-2 px-4 text-left">Email</th>
-                  <th className="py-2 px-4 text-left">Age</th>
+                  <th className="px-4 py-2 text-left">ID</th>
+                  <th className="px-4 py-2 text-left">Name</th>
+                  <th className="px-4 py-2 text-left">Email</th>
+                  <th className="px-4 py-2 text-left">Age</th>
+                  <th className="px-4 py-2 text-left">Class</th>
                 </tr>
               </thead>
               <tbody>
-                {students.length === 0 ? (
+                {filteredStudents.length === 0 ? (
                   <tr>
-                    <td colSpan={4} className="py-4 text-center text-gray-500">
+                    <td colSpan={5} className="py-4 text-center text-gray-500">
                       No students found.
                     </td>
                   </tr>
                 ) : (
-                  students.map((student) => (
+                  filteredStudents.map((student) => (
                     <tr key={student.numInsc} className="border-b">
-                      <td className="py-2 px-4">{student.numInsc}</td>
-                      <td className="py-2 px-4">{student.name}</td>
-                      <td className="py-2 px-4">{student.mail}</td>
-                      <td className="py-2 px-4">{student.age}</td>
+                      <td className="px-4 py-2">{student.numInsc}</td>
+                      <td className="px-4 py-2">{student.name}</td>
+                      <td className="px-4 py-2">{student.mail}</td>
+                      <td className="px-4 py-2">{student.age}</td>
+                      <td className="px-4 py-2">
+                        {student.classEntity.name}
+                      </td>{" "}
+                      {/* Display class name */}
                     </tr>
                   ))
                 )}

@@ -1,7 +1,14 @@
 'use client';
 
-import React, { useState } from 'react';
-import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuGroup } from "@/components/Dropdown";
+import React, { useState, useEffect } from 'react';
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuGroup,
+} from "@/components/Dropdown";
 import { cx } from "@/lib/utils";
 
 export default function AddStudent() {
@@ -9,34 +16,46 @@ export default function AddStudent() {
   const [name, setName] = useState<string>(''); // Student name
   const [mail, setMail] = useState<string>(''); // Student email
   const [age, setAge] = useState<number>(0); // Student age
+  const [selectedClassId, setSelectedClassId] = useState<number | null>(null); // Selected class ID
   const [error, setError] = useState<string | null>(null); // Error state
   const [success, setSuccess] = useState<string | null>(null); // Success state
+  const [classes, setClasses] = useState<any[]>([]); // Classes list
 
-  const workspaces = [
-    {
-      value: "INFO RESEAUX MULTI 1",
-      name: "IRM 1",
-      initials: " 1",
-      color: "bg-indigo-600 dark:bg-indigo-500",
-    },
-    {
-      value: "INFO RESEAUX MULTI 2",
-      name: "IRM 2",
-      initials: "2",
-      color: "bg-green-600 dark:bg-green-500",
-    },
-    {
-      value: "INFO RESEAUX MULTI 3",
-      name: "IRM 3",
-      initials: " 3",
-      color: "bg-yellow-600 dark:bg-yellow-500",
-    },
-  ];
+  useEffect(() => {
+    const fetchClasses = async () => {
+      try {
+        const response = await fetch('http://localhost:8090/api/classes', {
+          method: 'GET',
+        });
+        if (!response.ok) {
+          throw new Error('Failed to fetch classes');
+        }
+        const data = await response.json();
+        setClasses(data);
+      } catch (err) {
+        console.error('Error fetching classes:', err);
+        setError('Failed to load classes.');
+      }
+    };
+
+    fetchClasses();
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    const newStudent = { numInsc, name, mail, age };
+    if (!selectedClassId) {
+      setError('Please select a class.');
+      return;
+    }
+
+    const newStudent = {
+      numInsc,
+      name,
+      mail,
+      age,
+      classEntity: { id: selectedClassId },
+    };
 
     try {
       const response = await fetch('http://localhost:8090/api/Students', {
@@ -56,6 +75,7 @@ export default function AddStudent() {
       setName('');
       setMail('');
       setAge(0);
+      setSelectedClassId(null);
       setError(null);
     } catch (error) {
       console.error('Error adding student:', error);
@@ -70,6 +90,7 @@ export default function AddStudent() {
         {error && <div className="text-red-500">{error}</div>}
         {success && <div className="text-green-500">{success}</div>}
 
+        {/* Input Fields */}
         <div className="flex items-center gap-x-2.5">
           <span
             className="flex aspect-square size-8 items-center justify-center rounded bg-indigo-600 p-2 text-xs font-medium text-white"
@@ -87,7 +108,6 @@ export default function AddStudent() {
             className="block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm transition-all hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:border-gray-800 dark:bg-gray-950"
           />
         </div>
-
         <div className="flex items-center gap-x-2.5">
           <span
             className="flex aspect-square size-8 items-center justify-center rounded bg-indigo-600 p-2 text-xs font-medium text-white"
@@ -105,7 +125,6 @@ export default function AddStudent() {
             className="block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm transition-all hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:border-gray-800 dark:bg-gray-950"
           />
         </div>
-
         <div className="flex items-center gap-x-2.5">
           <span
             className="flex aspect-square size-8 items-center justify-center rounded bg-indigo-600 p-2 text-xs font-medium text-white"
@@ -123,7 +142,6 @@ export default function AddStudent() {
             className="block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm transition-all hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:border-gray-800 dark:bg-gray-950"
           />
         </div>
-
         <div className="flex items-center gap-x-2.5">
           <span
             className="flex aspect-square size-8 items-center justify-center rounded bg-indigo-600 p-2 text-xs font-medium text-white"
@@ -142,35 +160,33 @@ export default function AddStudent() {
           />
         </div>
 
-        <button
-          type="submit"
-          className="w-full rounded bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 transition focus:outline-none focus:ring-2 focus:ring-indigo-500"
-        >
-          Add Student
-        </button>
-
         {/* Dropdown Menu */}
         <DropdownMenu>
           <DropdownMenuTrigger className="mt-4 w-full px-4 py-2 text-center bg-gray-200 rounded-lg text-gray-700 hover:bg-gray-300">
-            Select Workspace
+            {selectedClassId ? `Class ID: ${selectedClassId}` : 'Select Class'}
           </DropdownMenuTrigger>
           <DropdownMenuContent className="w-full">
-            <DropdownMenuLabel>Workspaces ({workspaces.length})</DropdownMenuLabel>
+            <DropdownMenuLabel>Available Classes ({classes.length})</DropdownMenuLabel>
             <DropdownMenuGroup>
-              {workspaces.map((workspace) => (
-                <DropdownMenuItem key={workspace.value}>
+              {classes.map((classItem) => (
+                <DropdownMenuItem
+                  key={classItem.id}
+                  onClick={() => setSelectedClassId(classItem.id)}
+                >
                   <div className="flex w-full items-center gap-x-2.5">
                     <span
                       className={cx(
-                        workspace.color,
+                        "bg-indigo-500 dark:bg-indigo-400",
                         "flex aspect-square size-8 items-center justify-center rounded p-2 text-xs font-medium text-white"
                       )}
                       aria-hidden="true"
                     >
-                      {workspace.initials}
+                      {classItem.id}
                     </span>
                     <div>
-                      <p className="text-sm font-medium text-gray-900 dark:text-gray-50">{workspace.name}</p>
+                      <p className="text-sm font-medium text-gray-900 dark:text-gray-50">
+                        {classItem.name}
+                      </p>
                     </div>
                   </div>
                 </DropdownMenuItem>
@@ -178,6 +194,13 @@ export default function AddStudent() {
             </DropdownMenuGroup>
           </DropdownMenuContent>
         </DropdownMenu>
+
+        <button
+          type="submit"
+          className="w-full rounded bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 transition focus:outline-none focus:ring-2 focus:ring-indigo-500"
+        >
+          Add Student
+        </button>
       </form>
     </div>
   );
