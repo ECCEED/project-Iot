@@ -31,7 +31,7 @@ public class StudentController {
     }
 
     // Get all students
-    @GetMapping("/Students")
+    @GetMapping("/getAllStudents")
     @CrossOrigin(origins = "http://localhost:3000") // Allow requests from frontend
     public ResponseEntity<List<Student>> getAllStudents() {
         try {

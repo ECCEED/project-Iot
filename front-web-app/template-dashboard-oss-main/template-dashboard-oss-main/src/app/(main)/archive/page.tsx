@@ -1,264 +1,267 @@
-'use client'
+'use client'; // Mark this component as a Client Component
 
-import { useEffect, useState } from "react"
+import { useEffect, useState } from "react";
 
-type AttendanceRecord = {
-  studentId: string
-  studentName: string
-  className: string // The class to which the student belongs (IRM1, IRM2, etc.)
-  attendance: Record<string, 'Present' | 'Absent'>
-}
+// TypeScript type for an archive entry
+type ArchiveEntry = {
+  id: number;
+  studentID: string;
+  status: string;
+  date: string; 
+  clas: string;
+  course: string; // New field for course
+};
 
-type FilterOptions = {
-  class: string
-  month: string
-}
-
-export default function AttendanceRegister() {
-  const [attendanceData, setAttendanceData] = useState<AttendanceRecord[]>([])
-  const [dates, setDates] = useState<string[]>([]) 
-  const [loading, setLoading] = useState<boolean>(false)
-  const [error, setError] = useState<string | null>(null)
-
-  // Filter and selected state
-  const [filter, setFilter] = useState<FilterOptions>({ class: 'IRM1', month: '2024-04' })
-  const [filteredData, setFilteredData] = useState<AttendanceRecord[]>([])
+export default function ArchiveTable() {
+  const [archives, setArchives] = useState<ArchiveEntry[]>([]);
+  const [filteredArchives, setFilteredArchives] = useState<ArchiveEntry[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+  const [selectedMonth, setSelectedMonth] = useState<number | null>(null);
+  const [selectedClas, setSelectedClas] = useState<string | null>(null);
+  const [searchStudentID, setSearchStudentID] = useState<string>("");
+  const [selectedCourse, setSelectedCourse] = useState<string | null>(null);
 
   // Pagination state
-  const [currentPage, setCurrentPage] = useState(1)
-  const datesPerPage = 5
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const resultsPerPage = 10;
 
-  // Handle class and month change
-  const handleClassChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
-    const selectedClass = event.target.value
-    setFilter(prevFilter => ({ ...prevFilter, class: selectedClass }))
-  }
-
-  const handleMonthChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
-    const selectedMonth = event.target.value
-    setFilter(prevFilter => ({ ...prevFilter, month: selectedMonth }))
-  }
-
-  // Calculate the indexes of dates to show on the current page
-  const indexOfLastDate = currentPage * datesPerPage
-  const indexOfFirstDate = indexOfLastDate - datesPerPage
-  const currentDates = dates.slice(indexOfFirstDate, indexOfLastDate)
-
-  // Handle page change
-  const handlePageChange = (pageNumber: number) => {
-    setCurrentPage(pageNumber)
-  }
-
-  // Mock data (to test locally without an API)
+  // Fetch archive entries when the component mounts
   useEffect(() => {
-    const mockData = {
-      "records": [
-        {
-          "studentId": "S001",
-          "studentName": "John Doe",
-          "className": "IRM1", // Add className property
-          "attendance": {
-            "2024-04-01": "Present",
-            "2024-04-02": "Absent",
-            "2024-04-03": "Present",
-            "2024-04-04": "Absent",
-            "2024-04-05": "Present",
-            "2024-04-06": "Present",
-            "2024-04-07": "Absent",
-            "2024-04-08": "Present",
-            "2024-04-09": "Absent",
-            "2024-04-10": "Present",
-            "2024-04-11": "Absent",
-            "2024-04-12": "Present",
-            "2024-04-13": "Present",
-            "2024-04-14": "Absent",
-            "2024-04-15": "Present",
-            "2024-05-01": "Absent",
-            "2024-05-02": "Present",
-            "2024-05-03": "Present",
-            "2024-05-04": "Absent",
-            "2024-05-05": "Present",
-            "2024-05-06": "Present",
-            "2024-05-07": "Absent",
-            "2024-05-08": "Present",
-            "2024-05-09": "Absent",
-            "2024-05-10": "Present",
-            "2024-05-11": "Present",
-            "2024-05-12": "Absent",
-            "2024-05-13": "Present",
-            "2024-06-01": "Present",
-            "2024-06-02": "Absent",
-            "2024-06-03": "Present",
-            "2024-06-04": "Absent",
-            "2024-06-05": "Present"
-          }
-        },
-        {
-          "studentId": "S002",
-          "studentName": "Jane Smith",
-          "className": "IRM1", // Add className property
-          "attendance": {
-            "2024-04-01": "Absent",
-            "2024-04-02": "Present",
-            "2024-04-03": "Absent",
-            "2024-04-04": "Present",
-            "2024-04-05": "Absent",
-            "2024-04-06": "Present",
-            "2024-04-07": "Absent",
-            "2024-04-08": "Present",
-            "2024-04-09": "Present",
-            "2024-04-10": "Absent",
-            "2024-04-11": "Present",
-            "2024-04-12": "Absent",
-            "2024-04-13": "Present",
-            "2024-04-14": "Absent",
-            "2024-04-15": "Present",
-            "2024-05-01": "Present",
-            "2024-05-02": "Absent",
-            "2024-05-03": "Present",
-            "2024-05-04": "Present",
-            "2024-05-05": "Absent",
-            "2024-05-06": "Present",
-            "2024-05-07": "Absent",
-            "2024-05-08": "Present",
-            "2024-05-09": "Present",
-            "2024-05-10": "Absent",
-            "2024-05-11": "Present",
-            "2024-05-12": "Present",
-            "2024-05-13": "Absent",
-            "2024-06-01": "Absent",
-            "2024-06-02": "Present",
-            "2024-06-03": "Absent",
-            "2024-06-04": "Present",
-            "2024-06-05": "Absent"
-          }
+    async function fetchArchives() {
+      try {
+        const response = await fetch("http://localhost:8090/api/archives"); // API endpoint for getting archives
+        if (!response.ok) {
+          throw new Error("Failed to fetch archives");
         }
-      ],
-      "dates": [
-        "2024-04-01", "2024-04-02", "2024-04-03", "2024-04-04", "2024-04-05", "2024-04-06", "2024-04-07", "2024-04-08", "2024-04-09", "2024-04-10",
-        "2024-04-11", "2024-04-12", "2024-04-13", "2024-04-14", "2024-04-15", "2024-05-01", "2024-05-02", "2024-05-03", "2024-05-04", "2024-05-05",
-        "2024-05-06", "2024-05-07", "2024-05-08", "2024-05-09", "2024-05-10", "2024-05-11", "2024-05-12", "2024-05-13", "2024-06-01", "2024-06-02",
-        "2024-06-03", "2024-06-04", "2024-06-05"
-      ]
-    };
-
-    setAttendanceData(mockData.records);
-    setDates(mockData.dates);
-    setLoading(false);
+        const data = await response.json();
+        setArchives(data);
+        setFilteredArchives(data); // Initially display all records
+      } catch (error: any) {
+        console.error("Error fetching archives:", error);
+        setError("There was an error loading archive data.");
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchArchives();
   }, []);
 
-  // Filter records by class and month
-  useEffect(() => {
-    // Filter by class first
-    const filteredRecords = attendanceData.filter(record => record.className === filter.class);
+  // Handle filtering archives
+  const applyFilters = (
+    month: number | null, 
+    clas: string | null, 
+    studentID: string, 
+    course: string | null
+  ) => {
+    let filtered = archives;
 
-    // Filter dates that start with the selected month (e.g., '2024-04')
-    const filteredDates = dates.filter(date => date.startsWith(filter.month));
-
-    // Filter attendance data by the selected dates
-    const filteredData = filteredRecords.map(record => {
-      const filteredAttendance: Record<string, 'Present' | 'Absent'> = {};
-      filteredDates.forEach(date => {
-        filteredAttendance[date] = record.attendance[date] || 'N/A';
+    if (month) {
+      filtered = filtered.filter((archive) => {
+        const archiveDate = new Date(archive.date);
+        return archiveDate.getMonth() + 1 === month;
       });
-      return { ...record, attendance: filteredAttendance };
-    });
+    }
 
-    setFilteredData(filteredData);
-    setDates(filteredDates); // Update the displayed dates
-    setCurrentPage(1); // Reset to the first page when the filter changes
-  }, [filter, attendanceData]);
+    if (clas) {
+      filtered = filtered.filter((archive) => archive.clas === clas);
+    }
 
-  // Calculate the number of pages
-  const totalPages = Math.ceil(filteredData.length / datesPerPage);
+    if (studentID.trim()) {
+      filtered = filtered.filter((archive) =>
+        archive.studentID.toLowerCase().includes(studentID.toLowerCase())
+      );
+    }
+
+    if (course) {
+      filtered = filtered.filter((archive) => archive.course === course);
+    }
+
+    setCurrentPage(1); // Reset to the first page whenever filters change
+    setFilteredArchives(filtered);
+  };
+
+  // Pagination calculations
+  const totalResults = filteredArchives.length;
+  const totalPages = Math.ceil(totalResults / resultsPerPage);
+  const paginatedResults = filteredArchives.slice(
+    (currentPage - 1) * resultsPerPage,
+    currentPage * resultsPerPage
+  );
 
   return (
-    <div className="p-4">
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 mt-4">
-        <div>
-          <label htmlFor="class" className="block text-sm font-medium text-gray-700">Class</label>
-          <select
-            id="class"
-            name="class"
-            value={filter.class}
-            onChange={handleClassChange}
-            className="mt-1 block w-full p-2 bg-white border rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
-          >
-            <option value="IRM1">IRM1</option>
-            <option value="IRM2">IRM2</option>
-            <option value="IRM3">IRM3</option>
-          </select>
+    <>
+      <h1 className="text-lg font-semibold text-gray-900 sm:text-xl dark:text-gray-50">
+        Archive List
+      </h1>
+      <div className="mt-4 sm:mt-6 lg:mt-10">
+
+        {/* Filters */}
+        <div className="mb-4 grid grid-cols-2 gap-4">
+          {/* Month and Class Filters */}
+          <div>
+            <label htmlFor="month-select" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+              Filter by Month
+            </label>
+            <select
+              id="month-select"
+              className="mt-2 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-300"
+              value={selectedMonth || ""}
+              onChange={(event) => {
+                const month = parseInt(event.target.value, 10);
+                setSelectedMonth(month);
+                applyFilters(month, selectedClas, searchStudentID, selectedCourse);
+              }}
+            >
+              <option value="">All</option>
+              <option value="1">January</option>
+              <option value="2">February</option>
+              <option value="3">March</option>
+              <option value="4">April</option>
+              <option value="5">May</option>
+              <option value="6">June</option>
+              <option value="7">July</option>
+              <option value="8">August</option>
+              <option value="9">September</option>
+              <option value="10">October</option>
+              <option value="11">November</option>
+              <option value="12">December</option>
+            </select>
+          </div>
+
+          <div>
+            <label htmlFor="classe-select" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+              Filter by Class
+            </label>
+            <select
+              id="classe-select"
+              className="mt-2 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-300"
+              value={selectedClas || ""}
+              onChange={(event) => {
+                const clas = event.target.value || null;
+                setSelectedClas(clas);
+                applyFilters(selectedMonth, clas, searchStudentID, selectedCourse);
+              }}
+            >
+              <option value="">All</option>
+              <option value="IRM1">IRM1</option>
+              <option value="IRM2">IRM2</option>
+              <option value="IRM3">IRM3</option>
+            </select>
+          </div>
+
+          {/* Student ID and Course Filters */}
+          <div>
+            <label htmlFor="studentID-input" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+              Filter by Student ID
+            </label>
+            <input
+              id="studentID-input"
+              type="text"
+              className="mt-2 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-300"
+              value={searchStudentID}
+              onChange={(event) => {
+                const studentID = event.target.value;
+                setSearchStudentID(studentID);
+                applyFilters(selectedMonth, selectedClas, studentID, selectedCourse);
+              }}
+              placeholder="Enter Student ID"
+            />
+          </div>
+
+          <div>
+            <label htmlFor="course-select" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+              Filter by Course
+            </label>
+            <select
+              id="course-select"
+              className="mt-2 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-300"
+              value={selectedCourse || ""}
+              onChange={(event) => {
+                const course = event.target.value || null;
+                setSelectedCourse(course);
+                applyFilters(selectedMonth, selectedClas, searchStudentID, course);
+              }}
+            >
+              <option value="">All</option>
+              <option value="Java">Java</option>
+              <option value="C++">C++</option>
+              <option value="Python">Python</option>
+              <option value="Math">Math</option>
+              <option value="Physics">Physics</option>
+            </select>
+          </div>
         </div>
 
-        <div>
-          <label htmlFor="month" className="block text-sm font-medium text-gray-700">Month</label>
-          <select
-            id="month"
-            name="month"
-            value={filter.month}
-            onChange={handleMonthChange}
-            className="mt-1 block w-full p-2 bg-white border rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
-          >
-            <option value="2024-04">April 2024</option>
-            <option value="2024-05">May 2024</option>
-            <option value="2024-06">June 2024</option>
-          </select>
-        </div>
-      </div>
-
-      {loading ? (
-        <p>Loading...</p>
-      ) : error ? (
-        <p className="text-red-500">{error}</p>
-      ) : (
-        <>
-          {filteredData.length === 0 ? (
-            <p>No attendance records found for this month and class.</p>
+        {/* Table for displaying archive entries */}
+        <div className="overflow-x-auto mt-10">
+          {loading ? (
+            <div className="text-center text-gray-500">Loading archives...</div>
+          ) : error ? (
+            <div className="text-center text-red-500">{error}</div> // Display error message
           ) : (
-            <div>
-              <table className="min-w-full table-auto">
+            <>
+              <table className="min-w-full table-auto border-collapse">
                 <thead>
-                  <tr>
-                    <th className="py-2 px-4 text-left">Student Name</th>
-                    {dates.map((date, index) => (
-                      <th key={index} className="py-2 px-4 text-left">{date}</th>
-                    ))}
+                  <tr className="border-b">
+                    <th className="py-2 px-4 text-left">ID</th>
+                    <th className="py-2 px-4 text-left">Student ID</th>
+                    <th className="py-2 px-4 text-left">Status</th>
+                    <th className="py-2 px-4 text-left">Date</th>
+                    <th className="py-2 px-4 text-left">Class</th>
+                    <th className="py-2 px-4 text-left">Course</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredData.map((record, index) => (
-                    <tr key={index}>
-                      <td className="py-2 px-4">{record.studentName}</td>
-                      {dates.map((date, dateIndex) => (
-                        <td key={dateIndex} className="py-2 px-4">
-                          {record.attendance[date] || 'N/A'}
-                        </td>
-                      ))}
+                  {paginatedResults.length === 0 ? (
+                    <tr>
+                      <td colSpan={6} className="py-4 text-center text-gray-500">
+                        No archives found.
+                      </td>
                     </tr>
-                  ))}
+                  ) : (
+                    paginatedResults.map((archive) => (
+                      <tr key={archive.id} className="border-b">
+                        <td className="py-2 px-4">{archive.id}</td>
+                        <td className="py-2 px-4">{archive.studentID}</td>
+                        <td className="py-2 px-4">{archive.status}</td>
+                        <td className="py-2 px-4">{new Date(archive.date).toLocaleString()}</td>
+                        <td className="py-2 px-4">{archive.clas}</td>
+                        <td className="py-2 px-4">{archive.course}</td>
+                      </tr>
+                    ))
+                  )}
                 </tbody>
               </table>
-              <div className="flex justify-center mt-4">
+
+              {/* Pagination controls */}
+              <div className="mt-4 flex items-center justify-center">
                 <button
-                  onClick={() => handlePageChange(currentPage - 1)}
                   disabled={currentPage === 1}
-                  className="px-4 py-2 bg-blue-500 text-white rounded-md"
+                  onClick={() => setCurrentPage((prev) => prev - 1)}
+                  className={`px-4 py-2 mx-1 rounded-md ${
+                    currentPage === 1 ? "bg-gray-300 cursor-not-allowed" : "bg-indigo-600 text-white"
+                  }`}
                 >
                   Previous
                 </button>
-                <span className="mx-4">Page {currentPage} of {totalPages}</span>
+                <span className="px-4 py-2 mx-1 text-gray-600">
+                  Page {currentPage} of {totalPages}
+                </span>
                 <button
-                  onClick={() => handlePageChange(currentPage + 1)}
                   disabled={currentPage === totalPages}
-                  className="px-4 py-2 bg-blue-500 text-white rounded-md"
+                  onClick={() => setCurrentPage((prev) => prev + 1)}
+                  className={`px-4 py-2 mx-1 rounded-md ${
+                    currentPage === totalPages ? "bg-gray-300 cursor-not-allowed" : "bg-indigo-600 text-white"
+                  }`}
                 >
                   Next
                 </button>
               </div>
-            </div>
+            </>
           )}
-        </>
-      )}
-    </div>
-  )
+        </div>
+      </div>
+    </>
+  );
 }

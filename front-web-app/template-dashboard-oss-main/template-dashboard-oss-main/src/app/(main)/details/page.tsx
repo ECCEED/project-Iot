@@ -27,12 +27,14 @@ export default function Example() {
   useEffect(() => {
     async function fetchData() {
       try {
+
         // Fetch students
         const studentResponse = await fetch("http://localhost:8090/api/Students", {
           method: 'GET',
         });
         if (!studentResponse.ok) {
           throw new Error("Failed to fetch students");
+
         }
         const studentData = await studentResponse.json();
         setStudents(studentData);
