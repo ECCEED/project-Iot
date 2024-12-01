@@ -18,6 +18,7 @@ public class Student {
     private String Name;
     private int age;
     private String mail;
+    private String photoUrl;
 
     @ManyToOne
     @JoinColumn(name = "class_id")

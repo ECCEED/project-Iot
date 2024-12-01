@@ -1,75 +1,172 @@
-'use client'
+'use client';
 
-import { useEffect, useState } from "react"
+import { useEffect, useState } from "react";
+import { FiEdit, FiTrash } from "react-icons/fi";
+import Swal from "sweetalert2";
 
 type ClassEntity = {
-  id: string
-  name: string
-}
+  id: string;
+  name: string;
+};
 
 type Student = {
-  numInsc: string
-  name: string
-  mail: string
-  age: number
-  classEntity: ClassEntity
-}
+  numInsc: string;
+  name: string;
+  mail: string;
+  age: number;
+  classEntity: ClassEntity;
+  photoUrl: string;
+};
 
 export default function Example() {
-  const [students, setStudents] = useState<Student[]>([])
-  const [filteredStudents, setFilteredStudents] = useState<Student[]>([]) // To hold filtered students
-  const [loading, setLoading] = useState<boolean>(true)
-  const [error, setError] = useState<string | null>(null) // Error state to handle fetch errors
-  const [selectedClass, setSelectedClass] = useState<string>('') // Selected class filter state
-  const [classes, setClasses] = useState<ClassEntity[]>([]) // State to hold available classes
+  const [students, setStudents] = useState<Student[]>([]);
+  const [filteredStudents, setFilteredStudents] = useState<Student[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+  const [selectedClass, setSelectedClass] = useState<string>('');
+  const [classes, setClasses] = useState<ClassEntity[]>([]);
 
-  // Fetch students and classes when the component mounts
   useEffect(() => {
     async function fetchData() {
       try {
-
-        // Fetch students
-        const studentResponse = await fetch("http://localhost:8090/api/Students", {
-          method: 'GET',
-        });
-        if (!studentResponse.ok) {
-          throw new Error("Failed to fetch students");
-
-        }
+        const studentResponse = await fetch("http://localhost:8090/api/Students");
+        if (!studentResponse.ok) throw new Error("Failed to fetch students");
         const studentData = await studentResponse.json();
         setStudents(studentData);
-        setFilteredStudents(studentData); // Initially show all students
+        setFilteredStudents(studentData);
 
-        // Fetch classes
-        const classResponse = await fetch("http://localhost:8090/api/classes", {
-          method: 'GET',
-        });
-        if (!classResponse.ok) {
-          throw new Error("Failed to fetch classes");
-        }
+        const classResponse = await fetch("http://localhost:8090/api/classes");
+        if (!classResponse.ok) throw new Error("Failed to fetch classes");
         const classData = await classResponse.json();
-        setClasses(classData); // Store fetched classes
-      } catch (err: any) {
-        console.error("Error fetching data:", err);
+        setClasses(classData);
+      } catch (err) {
         setError("Failed to load data.");
       } finally {
-        setLoading(false); // Set loading to false once data is fetched
+        setLoading(false);
       }
     }
 
     fetchData();
   }, []);
 
-  // Handle filtering students by class
+  const handleDelete = async (studentId: string) => {
+    try {
+      const confirm = await Swal.fire({
+        title: "Are you sure?",
+        text: "You won't be able to revert this!",
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonText: "Yes, delete it!",
+      });
+
+      if (confirm.isConfirmed) {
+        // Call the DELETE API to delete the student
+        const response = await fetch(`http://localhost:8090/api/Students/${studentId}`, {
+          method: 'DELETE',
+        });
+
+        if (!response.ok) {
+          throw new Error("Failed to delete the student.");
+        }
+
+        // Remove the student from the filtered list
+        setFilteredStudents((prev) => prev.filter((student) => student.numInsc !== studentId));
+
+        // Show success message
+        await Swal.fire("Deleted!", "The student has been deleted.", "success");
+      }
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        Swal.fire("Error!", error.message || "Failed to delete the student.", "error");
+      } else {
+        Swal.fire("Error!", "An unknown error occurred.", "error");
+      }
+    }
+  };
+
+  const handleEdit = async (studentId: string) => {
+    const student = students.find((s) => s.numInsc === studentId);
+
+    if (!student) return;
+
+    const { value: formValues } = await Swal.fire({
+      title: "Edit Student",
+      html: `
+      <input id="swal-name" class="swal2-input" placeholder="Name" value="${student.name}">
+      <input id="swal-mail" class="swal2-input" placeholder="Email" value="${student.mail}">
+      <input id="swal-age" class="swal2-input" placeholder="Age" value="${student.age}">
+      <select id="swal-class" class="swal2-select">
+        ${classes
+        .map(
+          (classEntity) =>
+            `<option value="${classEntity.id}" ${
+              classEntity.id === student.classEntity?.id ? "selected" : ""
+            }>${classEntity.name}</option>`
+        )
+        .join("")}
+      </select>
+    `,
+      showCancelButton: true,
+      confirmButtonText: "Save",
+      preConfirm: () => ({
+        name: (document.getElementById("swal-name") as HTMLInputElement).value,
+        mail: (document.getElementById("swal-mail") as HTMLInputElement).value,
+        age: +(document.getElementById("swal-age") as HTMLInputElement).value,
+        classEntity: {
+          id: (document.getElementById("swal-class") as HTMLSelectElement).value,
+          name: (document.getElementById("swal-class") as HTMLSelectElement)
+            .options[
+            (document.getElementById("swal-class") as HTMLSelectElement).selectedIndex
+            ].text,
+        },
+      }),
+    });
+
+    if (formValues) {
+      try {
+        // Call the PUT API to update the student's details
+        const response = await fetch(`http://localhost:8090/api/Students/${studentId}`, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            ...formValues,
+            numInsc: studentId, // Ensure the numInsc is included
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error("Failed to update the student.");
+        }
+
+        // Update the student in the filtered list
+        setFilteredStudents((prev) =>
+          prev.map((student) =>
+            student.numInsc === studentId ? { ...student, ...formValues } : student
+          )
+        );
+
+        // Show success message
+        await Swal.fire("Updated!", "The student's details have been updated.", "success");
+      } catch (error: unknown) {
+        if (error instanceof Error) {
+          Swal.fire("Error!", error.message || "Failed to update the student.", "error");
+        } else {
+          Swal.fire("Error!", "An unknown error occurred.", "error");
+        }
+      }
+    }
+  };
+
   const handleClassFilterChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
     const selectedClass = event.target.value;
     setSelectedClass(selectedClass);
 
     if (selectedClass === '') {
-      setFilteredStudents(students); // If no class selected, show all students
+      setFilteredStudents(students);
     } else {
-      const filtered = students.filter(student => student.classEntity.name === selectedClass);
-      setFilteredStudents(filtered);
+      setFilteredStudents(students.filter((student) => student.classEntity.name === selectedClass));
     }
   };
 
@@ -78,8 +175,6 @@ export default function Example() {
       <h1 className="text-lg font-semibold text-gray-900 sm:text-xl dark:text-gray-50">
         Student List
       </h1>
-
-      {/* Class filter dropdown */}
       <div className="mt-4 sm:mt-6 lg:mt-10">
         <label
           htmlFor="classFilter"
@@ -94,7 +189,6 @@ export default function Example() {
           className="mt-2 block w-40 rounded-md border border-gray-300 p-2 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
         >
           <option value="">All Classes</option>
-          {/* Dynamically generate class options */}
           {classes.map((classEntity) => (
             <option key={classEntity.id} value={classEntity.name}>
               {classEntity.name}
@@ -102,43 +196,63 @@ export default function Example() {
           ))}
         </select>
       </div>
-
       <div className="mt-4 sm:mt-6 lg:mt-10">
-        {/* Table for displaying students */}
         <div className="mt-10 overflow-x-auto">
           {loading ? (
             <div className="text-center text-gray-500">Loading students...</div>
           ) : error ? (
-            <div className="text-center text-red-500">{error}</div> // Display error message
+            <div className="text-center text-red-500">{error}</div>
           ) : (
             <table className="min-w-full table-auto border-collapse">
               <thead>
                 <tr className="border-b">
+                  <th className="px-4 py-2 text-left">Photo</th>
                   <th className="px-4 py-2 text-left">ID</th>
                   <th className="px-4 py-2 text-left">Name</th>
                   <th className="px-4 py-2 text-left">Email</th>
                   <th className="px-4 py-2 text-left">Age</th>
                   <th className="px-4 py-2 text-left">Class</th>
+                  <th className="px-4 py-2 text-left">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {filteredStudents.length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="py-4 text-center text-gray-500">
+                    <td colSpan={7} className="py-4 text-center text-gray-500">
                       No students found.
                     </td>
                   </tr>
                 ) : (
                   filteredStudents.map((student) => (
                     <tr key={student.numInsc} className="border-b">
+                      <td className="px-4 py-2">
+                        <img
+                          src={student.photoUrl}
+                          alt={`${student.name}'s photo`}
+                          className="h-12 w-12 rounded-full object-cover"
+                        />
+                      </td>
                       <td className="px-4 py-2">{student.numInsc}</td>
                       <td className="px-4 py-2">{student.name}</td>
                       <td className="px-4 py-2">{student.mail}</td>
                       <td className="px-4 py-2">{student.age}</td>
                       <td className="px-4 py-2">
-                        {student.classEntity.name}
-                      </td>{" "}
-                      {/* Display class name */}
+                        {student.classEntity?.name || "No class assigned"}
+                      </td>
+                      <td className="flex space-x-4 px-4 py-2">
+                        <button
+                          className="text-red-500 hover:text-red-700"
+                          onClick={() => handleDelete(student.numInsc)}
+                        >
+                          <FiTrash size={18} />
+                        </button>
+                        <button
+                          className="text-blue-500 hover:text-blue-700"
+                          onClick={() => handleEdit(student.numInsc)}
+                        >
+                          <FiEdit size={18} />
+                        </button>
+                      </td>
                     </tr>
                   ))
                 )}

@@ -12,6 +12,7 @@ import {
 import { cx } from "@/lib/utils";
 
 export default function AddStudent() {
+  // State variables
   const [numInsc, setNumInsc] = useState<number>(0); // Student number
   const [name, setName] = useState<string>(''); // Student name
   const [mail, setMail] = useState<string>(''); // Student email
@@ -20,7 +21,9 @@ export default function AddStudent() {
   const [error, setError] = useState<string | null>(null); // Error state
   const [success, setSuccess] = useState<string | null>(null); // Success state
   const [classes, setClasses] = useState<any[]>([]); // Classes list
+  const [photo, setPhoto] = useState<File | null>(null); // Photo file
 
+  // Fetch available classes on component mount
   useEffect(() => {
     const fetchClasses = async () => {
       try {
@@ -31,7 +34,7 @@ export default function AddStudent() {
           throw new Error('Failed to fetch classes');
         }
         const data = await response.json();
-        setClasses(data);
+        setClasses(data); // Update state with class data
       } catch (err) {
         console.error('Error fetching classes:', err);
         setError('Failed to load classes.');
@@ -41,45 +44,56 @@ export default function AddStudent() {
     fetchClasses();
   }, []);
 
+  // Handle form submission
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    // Validate selected class
     if (!selectedClassId) {
       setError('Please select a class.');
       return;
     }
 
-    const newStudent = {
+    // Create the student object
+    const student = {
       numInsc,
       name,
       mail,
       age,
-      classEntity: { id: selectedClassId },
+      classEntity: { id: selectedClassId }, // Class reference
     };
 
+    // Create FormData
+    const formData = new FormData();
+    formData.append('student', JSON.stringify(student)); // Add student as JSON string
+    if (photo) {
+      formData.append('photo', photo); // Add photo file
+    }
+
     try {
+      // Send API request to backend
       const response = await fetch('http://localhost:8090/api/Students', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(newStudent),
+        body: formData,
       });
 
       if (!response.ok) {
-        throw new Error('Failed to add student');
+        const errorText = await response.text(); // Get detailed error message
+        throw new Error(errorText);
       }
 
+      // Success handling
       setSuccess('Student added successfully!');
       setNumInsc(0);
       setName('');
       setMail('');
       setAge(0);
       setSelectedClassId(null);
+      setPhoto(null); // Clear form after successful submission
       setError(null);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error adding student:', error);
-      setError('There was an error adding the student.');
+      setError(error.message || 'There was an error adding the student.');
     }
   };
 
@@ -195,11 +209,28 @@ export default function AddStudent() {
           </DropdownMenuContent>
         </DropdownMenu>
 
+        {/* File input for photo */}
+        <div className="flex items-center gap-x-2.5 mt-4">
+          <span
+            className="flex aspect-square size-8 items-center justify-center rounded bg-indigo-600 p-2 text-xs font-medium text-white"
+            aria-hidden="true"
+          >
+            PH
+          </span>
+          <input
+            id="photo"
+            type="file"
+            accept="image/*"
+            onChange={(e) => setPhoto(e.target.files ? e.target.files[0] : null)}
+            className="block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm transition-all hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:border-gray-800 dark:bg-gray-950"
+          />
+        </div>
+
         <button
           type="submit"
-          className="w-full rounded bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 transition focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          className="w-full rounded bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-md transition-all hover:bg-indigo-700"
         >
-          Add Student
+          Submit
         </button>
       </form>
     </div>

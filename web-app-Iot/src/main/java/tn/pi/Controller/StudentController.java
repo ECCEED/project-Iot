@@ -1,38 +1,49 @@
 package tn.pi.Controller;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 import tn.pi.Service.StudentService;
 import tn.pi.entities.Student;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 
 @RestController
 @RequestMapping("/api") // Group student-related endpoints under "/api/students"
+@CrossOrigin(origins = "http://localhost:3000") // Allow requests from frontend
 public class StudentController {
 
     @Autowired
     private StudentService studentService;
 
-    // Save a new student
+    // Save a new student with file upload
     @PostMapping("/Students")
-    public ResponseEntity<String> saveStudent(@RequestBody Student student) {
+    public ResponseEntity<String> saveStudent(
+            @RequestPart("student") String studentJson,
+            @RequestPart(value = "photo", required = false) MultipartFile photo
+    ) {
         try {
-            String result = studentService.saveStudent(student);
+            // Convert the JSON string to a Student object
+            ObjectMapper objectMapper = new ObjectMapper();
+            Student student = objectMapper.readValue(studentJson, Student.class);
+
+            // Call the service to save the student
+            String result = studentService.saveStudent(student, photo);
             return ResponseEntity.status(HttpStatus.CREATED).body("Student saved at: " + result);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
-        } catch (ExecutionException | InterruptedException e) {
+        } catch (ExecutionException | InterruptedException | IOException e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error saving student: " + e.getMessage());
         }
     }
 
     // Get all students
-    @GetMapping("/getAllStudents")
-    @CrossOrigin(origins = "http://localhost:3000") // Allow requests from frontend
+    @GetMapping("/Students")
     public ResponseEntity<List<Student>> getAllStudents() {
         try {
             List<Student> students = studentService.getAllStudents();
@@ -68,16 +79,19 @@ public class StudentController {
         }
     }
 
-    // Update a student
-    @PutMapping("/Students/{numInsc}")
-    public ResponseEntity<String> updateStudent(@PathVariable("numInsc") Long numInsc, @RequestBody Student student) {
+    @PutMapping(value = "/Students/{numInsc}", consumes = "application/json")
+    public ResponseEntity<String> updateStudent(@PathVariable Long numInsc,
+                                                @RequestBody Student student) throws ExecutionException, InterruptedException {
         try {
-            String result = studentService.updateStudent(numInsc, student);
-            return ResponseEntity.ok("Student updated at: " + result);
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
-        } catch (ExecutionException | InterruptedException e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error updating student: " + e.getMessage());
+            // Ensure that NumInsc from the path variable remains unchanged.
+            student.setNumInsc(numInsc); // This is just to ensure no modification on the number
+
+            // Call the service method to update the student, excluding photoUrl update.
+            String updateResult = studentService.updateStudent(numInsc, student);
+            return new ResponseEntity<>(updateResult, HttpStatus.OK);
+        } catch (IllegalArgumentException | IOException e) {
+            return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
         }
     }
+
 }

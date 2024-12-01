@@ -1,11 +1,9 @@
 package tn.pi.entities;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
+import jakarta.persistence.*;
 import lombok.*;
 import org.checkerframework.common.reflection.qual.GetConstructor;
+import java.util.List;
 
 @Entity
 @Getter
@@ -18,6 +16,7 @@ public class Class {
     @Id
     private Long ID;
     private String Name;
+
 
 
 }
