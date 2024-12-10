@@ -20,7 +20,7 @@ public class ArchiveService {
         Firestore dbFirestore = FirestoreClient.getFirestore();
         ApiFuture<WriteResult> collectionApiFuture = dbFirestore
                 .collection(COLLECTION_NAME)
-                .document(String.valueOf(archiveEntity.getId())) // Use the ID as the document key
+                .document(String.valueOf(archiveEntity.getId()))
                 .set(archiveEntity);
 
         return collectionApiFuture.get().getUpdateTime().toString();

@@ -28,19 +28,16 @@ public class StudentController {
             @RequestPart(value = "photo", required = false) MultipartFile photo
     ) {
         try {
-            // Convert the JSON string to a Student object
             ObjectMapper objectMapper = new ObjectMapper();
             Student student = objectMapper.readValue(studentJson, Student.class);
 
-            // Call the service to save the student
             String result = studentService.saveStudent(student, photo);
-            return ResponseEntity.status(HttpStatus.CREATED).body("Student saved at: " + result);
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
-        } catch (ExecutionException | InterruptedException | IOException e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error saving student: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.CREATED).body(result);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error: " + e.getMessage());
         }
     }
+
 
     // Get all students
     @GetMapping("/Students")
