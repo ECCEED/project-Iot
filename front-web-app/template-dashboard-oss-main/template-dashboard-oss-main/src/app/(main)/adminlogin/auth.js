@@ -1,17 +1,19 @@
-// src/auth.js (or auth.ts)
 import { signInWithEmailAndPassword } from "firebase/auth";
-import { auth } from '../../../../firebaseConfig'; // Import the auth instance
+import { auth } from "../../../../firebaseConfig"; // Import the auth instance
 
-export const signInAdmin = (email, password) => {
-  return signInWithEmailAndPassword(auth, email, password)
-    .then((userCredential) => {
-      const user = userCredential.user;
-      return {
-        user,
-        idToken: user.getIdToken(),
-      };
-    })
-    .catch((error) => {
-      throw new Error(error.message);
-    });
+export const signInAdmin = async (email, password) => {
+  try {
+    const userCredential = await signInWithEmailAndPassword(auth, email, password);
+    const user = userCredential.user;
+
+    // Await the ID token resolution
+    const idToken = await user.getIdToken();
+
+    return {
+      user,
+      idToken, // Return the resolved token
+    };
+  } catch (error) {
+    throw new Error(error.message);
+  }
 };

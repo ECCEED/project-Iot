@@ -1,20 +1,22 @@
-"use client"
-import { CategoryBarCard } from "@/components/ui/overview/DashboardCategoryBarCard"
-import { ChartCard } from "@/components/ui/overview/DashboardChartCard"
-import { Filterbar } from "@/components/ui/overview/DashboardFilterbar"
-import { ProgressBarCard } from "@/components/ui/overview/DashboardProgressBarCard"
-import { overviews } from "@/data/overview-data"
-import { OverviewData } from "@/data/schema"
-import { cx } from "@/lib/utils"
-import { subDays, toDate } from "date-fns"
-import React from "react"
-import { DateRange } from "react-day-picker"
+"use client";
 
-export type PeriodValue = "previous-period" | "last-year" | "no-comparison"
+import { CategoryBarCard } from "@/components/ui/overview/DashboardCategoryBarCard";
+import { ChartCard } from "@/components/ui/overview/DashboardChartCard";
+import { Filterbar } from "@/components/ui/overview/DashboardFilterbar";
+import { ProgressBarCard } from "@/components/ui/overview/DashboardProgressBarCard";
+import { overviews } from "@/data/overview-data";
+import { OverviewData } from "@/data/schema";
+import { cx } from "@/lib/utils";
+import { subDays, toDate } from "date-fns";
+import React from "react";
+import { DateRange } from "react-day-picker";
+import withAuth from "../HOC/withAuth";
+
+export type PeriodValue = "previous-period" | "last-year" | "no-comparison";
 
 const categories: {
-  title: keyof OverviewData
-  type: "currency" | "unit"
+  title: keyof OverviewData;
+  type: "currency" | "unit";
 }[] = [
   {
     title: "Rows read",
@@ -40,15 +42,15 @@ const categories: {
     title: "Logins",
     type: "unit",
   },
-]
+];
 
 export type KpiEntry = {
-  title: string
-  percentage: number
-  current: number
-  allowed: number
-  unit?: string
-}
+  title: string;
+  percentage: number;
+  current: number;
+  allowed: number;
+  unit?: string;
+};
 
 const data: KpiEntry[] = [
   {
@@ -72,7 +74,7 @@ const data: KpiEntry[] = [
     allowed: 20,
     unit: "GB",
   },
-]
+];
 
 const data2: KpiEntry[] = [
   {
@@ -95,15 +97,15 @@ const data2: KpiEntry[] = [
     allowed: 100,
     unit: "%",
   },
-]
+];
 
 export type KpiEntryExtended = Omit<
   KpiEntry,
   "current" | "allowed" | "unit"
 > & {
-  value: string
-  color: string
-}
+  value: string;
+  color: string;
+};
 
 const data3: KpiEntryExtended[] = [
   {
@@ -124,18 +126,18 @@ const data3: KpiEntryExtended[] = [
     value: "$31.9",
     color: "bg-gray-400 dark:bg-gray-600",
   },
-]
+];
 
-const overviewsDates = overviews.map((item) => toDate(item.date).getTime())
-const maxDate = toDate(Math.max(...overviewsDates))
+const overviewsDates = overviews.map((item) => toDate(item.date).getTime());
+const maxDate = toDate(Math.max(...overviewsDates));
 
-export default function Overview() {
+function Overview() {
   const [selectedDates, setSelectedDates] = React.useState<
     DateRange | undefined
   >({
     from: subDays(maxDate, 30),
     to: maxDate,
-  })
+  });
 
   return (
     <>
@@ -197,7 +199,7 @@ export default function Overview() {
         </div>
         <dl
           className={cx(
-            "mt-10 grid grid-cols-1 gap-14 sm:grid-cols-1 md:grid-cols-2 xl:grid-cols-3",
+            "mt-10 grid grid-cols-1 gap-14 sm:grid-cols-1 md:grid-cols-2 xl:grid-cols-3"
           )}
         >
           {categories.map((category) => {
@@ -209,10 +211,13 @@ export default function Overview() {
                 selectedDates={selectedDates}
                 selectedPeriod={"last-year"}
               />
-            )
+            );
           })}
         </dl>
       </section>
     </>
-  )
+  );
 }
+
+// Wrap the component with withAuth to protect it
+export default withAuth(Overview);

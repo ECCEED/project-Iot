@@ -26,7 +26,4 @@ public class archive {
     private Instant date;
     private String clas;
     private String course;
-
-
-
 }
