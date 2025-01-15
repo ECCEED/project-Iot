@@ -10,6 +10,7 @@ export const siteConfig = {
     adding:"/adding",
     archive:"/archive",
     login:"/adminlogin",
+    all:"/all"
   },
   externalLink: {
     blocks: "https://blocks.tremor.so/templates#dashboard",
