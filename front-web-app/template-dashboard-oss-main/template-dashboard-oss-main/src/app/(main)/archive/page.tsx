@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 // TypeScript type for an attendance entry
 type AttendanceEntry = {
   id: number;
-  studentId: string;
+  studentID: string;
   timestamps: string[];
   course: string;
 };
@@ -42,7 +42,7 @@ export default function AttendanceTable() {
   const handleSearch = (query: string) => {
     setSearchQuery(query);
     const filtered = attendances.filter((attendance) =>
-      attendance.studentId.toLowerCase().includes(query.toLowerCase())
+      attendance.studentID.toLowerCase().includes(query.toLowerCase())
     );
     setFilteredAttendances(filtered);
   };
@@ -82,7 +82,6 @@ export default function AttendanceTable() {
                   <th className="py-2 px-4 text-left">ID</th>
                   <th className="py-2 px-4 text-left">Student ID</th>
                   <th className="py-2 px-4 text-left">Timestamp</th>
-                  <th className="py-2 px-4 text-left">Course</th>
                 </tr>
                 </thead>
                 <tbody>
@@ -97,7 +96,7 @@ export default function AttendanceTable() {
                     attendance.timestamps.map((timestamp, index) => (
                       <tr key={`${attendance.id}-${index}`} className="border-b">
                         <td className="py-2 px-4">{attendance.id}</td>
-                        <td className="py-2 px-4">{attendance.studentId}</td>
+                        <td className="py-2 px-4">{attendance.studentID}</td>
                         <td className="py-2 px-4">{timestamp}</td>
                         <td className="py-2 px-4">{attendance.course}</td>
                       </tr>

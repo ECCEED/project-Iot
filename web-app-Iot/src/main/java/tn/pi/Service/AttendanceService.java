@@ -6,8 +6,8 @@ import com.google.firebase.cloud.FirestoreClient;
 import org.springframework.stereotype.Service;
 import tn.pi.entities.Attendance;
 
-import java.sql.Timestamp;
 import java.time.Instant;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
@@ -16,6 +16,7 @@ import java.util.concurrent.ExecutionException;
 public class AttendanceService {
 
     public static final String COLLECTION_NAME = "attendance";
+    private static final DateTimeFormatter ISO_DATE_FORMATTER = DateTimeFormatter.ISO_INSTANT;
 
     // Save an Attendance record to Firestore
     public String saveAttendance(Attendance attendance) throws ExecutionException, InterruptedException {
@@ -28,9 +29,8 @@ public class AttendanceService {
 
             return collectionApiFuture.get().getUpdateTime().toString();
         } catch (Exception e) {
-            // Log the error
             System.err.println("Error saving attendance: " + e.getMessage());
-            throw e; // Re-throw the exception
+            throw e;
         }
     }
 
@@ -67,7 +67,7 @@ public class AttendanceService {
     }
 
     // Add a timestamp to an Attendance record
-    public String addTimestampToAttendance(Long id, Instant timestamp) throws ExecutionException, InterruptedException {
+    public String addTimestampToAttendance(Long id, String timestamp) throws ExecutionException, InterruptedException {
         Firestore dbFirestore = FirestoreClient.getFirestore();
         DocumentReference documentReference = dbFirestore.collection(COLLECTION_NAME).document(String.valueOf(id));
 
@@ -77,11 +77,12 @@ public class AttendanceService {
         if (document.exists()) {
             Attendance attendance = document.toObject(Attendance.class);
             if (attendance.getTimestamps() == null) {
-                attendance.setTimestamps(new ArrayList<>()); // Initialize as a List if null
+                attendance.setTimestamps(new ArrayList<>()); // Initialize the list if null
             }
-            // Convert Instant to Timestamp before adding it to the list
-            attendance.getTimestamps().add(Timestamp.from(timestamp)); // Add the Timestamp
-            documentReference.set(attendance); // Save updated record
+            // Validate and add the timestamp string
+            Instant.parse(timestamp); // Ensure it's valid ISO-8601
+            attendance.getTimestamps().add(timestamp); // Add the string to the list
+            documentReference.set(attendance); // Save the updated record
             return "Timestamp added successfully to Attendance with ID " + id;
         } else {
             throw new IllegalArgumentException("Attendance record with ID " + id + " not found.");

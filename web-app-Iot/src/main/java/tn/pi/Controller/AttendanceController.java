@@ -7,6 +7,7 @@ import tn.pi.entities.Attendance;
 import tn.pi.Service.AttendanceService;
 
 import java.time.Instant;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 
@@ -53,20 +54,22 @@ public class AttendanceController {
     }
 
     // Add a timestamp to an Attendance record
-    @PostMapping("/{id}/timestamps")
-    public ResponseEntity<String> addTimestampToAttendance(@PathVariable Long id, @RequestBody Instant timestamp) {
+    @PostMapping("/attendance/{id}/timestamps")
+    public ResponseEntity<String> addTimestampToAttendance(@PathVariable Long id, @RequestBody String timestamp) {
         try {
+            // Validate and format the timestamp string
+            Instant.parse(timestamp); // Ensure it's a valid ISO-8601 format
             String result = attendanceService.addTimestampToAttendance(id, timestamp);
             return ResponseEntity.ok(result);
         } catch (ExecutionException | InterruptedException e) {
             return ResponseEntity.internalServerError().body("Error adding timestamp: " + e.getMessage());
         } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
+            return ResponseEntity.badRequest().body("Invalid timestamp format: " + e.getMessage());
         }
     }
 
     // Delete an Attendance record
-    @DeleteMapping("/{id}")
+    @DeleteMapping("/attendance/{id}")
     public ResponseEntity<String> deleteAttendance(@PathVariable Long id) {
         try {
             String result = attendanceService.deleteAttendance(id);

@@ -8,8 +8,6 @@ import jakarta.persistence.Id;
 import jakarta.persistence.FetchType;
 import lombok.*;
 
-import java.sql.Timestamp;
-import java.util.Date;
 import java.util.List;
 
 @Entity
@@ -22,8 +20,8 @@ public class Attendance {
 
     @Id
     private long id;
-    private String studentId;
+    private String studentID;
 
     @ElementCollection(fetch = FetchType.EAGER)
-    private List<Date> timestamps;
+    private List<String> timestamps;
 }
