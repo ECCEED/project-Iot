@@ -1,19 +1,35 @@
-import React from "react";
+"use client";
+import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
 const withAuth = (WrappedComponent: React.ComponentType) => {
   const AuthWrapper = (props: any) => {
     const router = useRouter();
-    const isLoggedIn = Boolean(localStorage.getItem("admin-auth-token"));
+    const [isLoggedIn, setIsLoggedIn] = useState<boolean>(Boolean(localStorage.getItem("admin-auth-token")));
 
-    React.useEffect(() => {
-      if (!isLoggedIn) {
-        router.push("/adminlogin"); // Redirect to login if not authenticated
-      }
-    }, [isLoggedIn, router]);
+    useEffect(() => {
+      const checkAuth = () => {
+        const token = localStorage.getItem("admin-auth-token");
+        setIsLoggedIn(Boolean(token));
+        if (!token) {
+          router.push("/adminlogin");
+        }
+      };
+
+
+      window.addEventListener("storage", checkAuth);
+
+
+      checkAuth();
+
+
+      return () => {
+        window.removeEventListener("storage", checkAuth);
+      };
+    }, [router]);
 
     if (!isLoggedIn) {
-      return null; // Return nothing while redirecting
+      return null;
     }
 
     return <WrappedComponent {...props} />;

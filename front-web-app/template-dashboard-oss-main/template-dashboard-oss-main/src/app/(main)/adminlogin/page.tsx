@@ -1,48 +1,44 @@
 "use client";
-import React, { useState } from "react";
-import { signInAdmin } from "./auth"; // Import the sign-in function
+import React, { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { signInAdmin } from "./auth";
 
 export default function AdminLogin() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [isLoggedIn, setIsLoggedIn] = useState(false); // Track login status
+  const router = useRouter();
+
+  useEffect(() => {
+    if (isLoggedIn) {
+      router.push("/overview"); // Redirect to overview page if logged in
+    }
+  }, [isLoggedIn, router]);
 
   const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    setError(""); // Clear previous error
 
     try {
-      // Call the fixed `signInAdmin` to get user and idToken
       const { user, idToken } = await signInAdmin(email, password);
-
       console.log("Admin logged in:", user);
       console.log("ID Token:", idToken);
+      console.log("email:", email);
 
-      // Send the resolved ID token to the backend for verification
-      const response = await fetch("http://localhost:8090/api/admin/login", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ idToken }),
-      });
 
-      if (!response.ok) {
-        throw new Error(`Backend error: ${response.statusText}`);
-      }
+      localStorage.setItem("user-email", email);
+      localStorage.setItem("admin-auth-token", idToken);
 
-      const data = await response.json();
-      console.log("Backend response:", data);
+      setIsLoggedIn(true);
+      router.push("/overview");
 
-      // Handle successful login (e.g., redirect to dashboard)
-      alert("Login successful!");
-    } catch (err) {
-      if (err instanceof Error) {
-        setError(`Failed to login: ${err.message}`);
-      } else {
-        setError("An unknown error occurred");
-      }
+    } catch (err: any) {
+      console.error("Error during admin login:", err.message);
+      setError("Login failed. Please check your email and password.");
     }
   };
+
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-100 dark:bg-gray-900">

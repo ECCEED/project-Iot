@@ -8,7 +8,7 @@ import { overviews } from "@/data/overview-data";
 import { OverviewData } from "@/data/schema";
 import { cx } from "@/lib/utils";
 import { subDays, toDate } from "date-fns";
-import React from "react";
+import React, { useState } from "react";
 import { DateRange } from "react-day-picker";
 import withAuth from "../HOC/withAuth";
 
@@ -132,9 +132,7 @@ const overviewsDates = overviews.map((item) => toDate(item.date).getTime());
 const maxDate = toDate(Math.max(...overviewsDates));
 
 function Overview() {
-  const [selectedDates, setSelectedDates] = React.useState<
-    DateRange | undefined
-  >({
+  const [selectedDates, setSelectedDates] = useState<DateRange | undefined>({
     from: subDays(maxDate, 30),
     to: maxDate,
   });
@@ -219,5 +217,4 @@ function Overview() {
   );
 }
 
-// Wrap the component with withAuth to protect it
 export default withAuth(Overview);

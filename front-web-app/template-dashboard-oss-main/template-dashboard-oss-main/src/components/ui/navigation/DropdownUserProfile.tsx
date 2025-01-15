@@ -1,11 +1,10 @@
-"use client"
+"use client";
 
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuGroup,
   DropdownMenuItem,
-  DropdownMenuLabel,
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
   DropdownMenuSeparator,
@@ -13,45 +12,58 @@ import {
   DropdownMenuSubMenuContent,
   DropdownMenuSubMenuTrigger,
   DropdownMenuTrigger,
-} from "@/components/Dropdown"
+} from "@/components/Dropdown";
 import {
-  RiArrowRightUpLine,
   RiComputerLine,
   RiMoonLine,
   RiSunLine,
-} from "@remixicon/react"
-import { useTheme } from "next-themes"
-import * as React from "react"
+} from "@remixicon/react";
+import { useTheme } from "next-themes";
+import * as React from "react";
+import { useRouter } from "next/navigation"; // to handle redirection
 
 export type DropdownUserProfileProps = {
-  children: React.ReactNode
-  align?: "center" | "start" | "end"
-}
+  children: React.ReactNode;
+  align?: "center" | "start" | "end";
+};
 
 export function DropdownUserProfile({
-  children,
-  align = "start",
-}: DropdownUserProfileProps) {
-  const [mounted, setMounted] = React.useState(false)
-  const { theme, setTheme } = useTheme()
+                                      children,
+                                      align = "start",
+                                    }: DropdownUserProfileProps) {
+  const [mounted, setMounted] = React.useState(false);
+  const { theme, setTheme } = useTheme();
+  const router = useRouter();
+
+  // Check user authentication on mount
   React.useEffect(() => {
-    setMounted(true)
-  }, [])
+    setMounted(true);
+  }, []);
+
+  // Sign out functionality
+  const handleSignOut = () => {
+    // Clear token and user information from localStorage
+    localStorage.removeItem("admin-auth-token");
+    localStorage.removeItem("user-email");
+
+    // Redirect to login page
+    router.push("/adminlogin");
+  };
 
   if (!mounted) {
-    return null
+    return null;
   }
+
   return (
     <>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>{children}</DropdownMenuTrigger>
         <DropdownMenuContent align={align}>
-          <DropdownMenuLabel>emma.stone@acme.com</DropdownMenuLabel>
           <DropdownMenuGroup>
             <DropdownMenuSubMenu>
               <DropdownMenuSubMenuTrigger>Theme</DropdownMenuSubMenuTrigger>
               <DropdownMenuSubMenuContent>
-              <DropdownMenuRadioGroup
+                <DropdownMenuRadioGroup
                   value={theme}
                   onValueChange={(value) => {
                     setTheme(value);
@@ -65,7 +77,7 @@ export function DropdownUserProfile({
                     <RiSunLine className="size-4 shrink-0" aria-hidden="true" />
                     Light
                   </DropdownMenuRadioItem>
-                  
+
                   <DropdownMenuRadioItem
                     aria-label="Switch to Dark Mode"
                     value="dark"
@@ -84,40 +96,15 @@ export function DropdownUserProfile({
                     System
                   </DropdownMenuRadioItem>
                 </DropdownMenuRadioGroup>
-
               </DropdownMenuSubMenuContent>
             </DropdownMenuSubMenu>
           </DropdownMenuGroup>
           <DropdownMenuSeparator />
           <DropdownMenuGroup>
-            <DropdownMenuItem>
-              Changelog
-              <RiArrowRightUpLine
-                className="mb-1 ml-1 size-2.5 shrink-0 text-gray-500"
-                aria-hidden="true"
-              />
-            </DropdownMenuItem>
-            <DropdownMenuItem>
-              Documentation
-              <RiArrowRightUpLine
-                className="mb-1 ml-1 size-2.5 shrink-0 text-gray-500"
-                aria-hidden="true"
-              />
-            </DropdownMenuItem>
-            <DropdownMenuItem>
-              Join Slack community
-              <RiArrowRightUpLine
-                className="mb-1 ml-1 size-2.5 shrink-0 text-gray-500"
-                aria-hidden="true"
-              />
-            </DropdownMenuItem>
-          </DropdownMenuGroup>
-          <DropdownMenuSeparator />
-          <DropdownMenuGroup>
-            <DropdownMenuItem>Sign out</DropdownMenuItem>
+            <DropdownMenuItem onClick={handleSignOut}>Sign out</DropdownMenuItem>
           </DropdownMenuGroup>
         </DropdownMenuContent>
       </DropdownMenu>
     </>
-  )
+  );
 }
